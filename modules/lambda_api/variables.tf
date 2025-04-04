@@ -28,3 +28,9 @@ variable "lambda_memory_size" {
   type        = number
   default     = 256
 }
+
+variable "tags" {
+  description = "Additional tags to apply to resources"
+  type        = map(string)
+  default     = {}
+}

@@ -29,6 +29,19 @@ resource "aws_lambda_function" "hello_world" {
   tags = {
     Environment = var.environment
     Service     = "hello-world-api"
+    ManagedBy   = "terraform"
+  }
+}
+
+# CloudWatch Log Group for Lambda
+resource "aws_cloudwatch_log_group" "hello_world_logs" {
+  name              = "/aws/lambda/${aws_lambda_function.hello_world.function_name}"
+  retention_in_days = var.log_retention_days
+
+  tags = {
+    Environment = var.environment
+    Service     = "hello-world-api"
+    ManagedBy   = "terraform"
   }
 }
 
@@ -51,13 +64,14 @@ resource "aws_iam_role" "lambda_role" {
 
   tags = {
     Environment = var.environment
+    ManagedBy   = "terraform"
   }
 }
 
 # CloudWatch logging permissions
 resource "aws_iam_policy" "lambda_logging" {
-  name        = "${var.environment}-hello-world-logging"
-  description = "IAM policy for logging from the hello-world lambda"
+  name        = "${var.environment}-hello-world-logging-policy"
+  description = "IAM policy for Lambda logging to CloudWatch"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -79,4 +93,10 @@ resource "aws_iam_policy" "lambda_logging" {
 resource "aws_iam_role_policy_attachment" "lambda_logs" {
   role       = aws_iam_role.lambda_role.name
   policy_arn = aws_iam_policy.lambda_logging.arn
+}
+
+# Lambda basic execution role policy attachment
+resource "aws_iam_role_policy_attachment" "lambda_basic" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
