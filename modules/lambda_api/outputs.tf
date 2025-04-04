@@ -29,3 +29,24 @@ output "cloudwatch_log_group" {
   description = "Name of the CloudWatch log group for Lambda"
   value       = aws_cloudwatch_log_group.hello_world_logs.name
 }
+
+# API Gateway outputs
+output "api_gateway_id" {
+  description = "ID of the API Gateway"
+  value       = aws_apigatewayv2_api.lambda_api.id
+}
+
+output "api_gateway_arn" {
+  description = "ARN of the API Gateway"
+  value       = aws_apigatewayv2_api.lambda_api.arn
+}
+
+output "api_gateway_endpoint" {
+  description = "Base URL for API Gateway stage"
+  value       = aws_apigatewayv2_stage.lambda_stage.invoke_url
+}
+
+output "api_hello_endpoint" {
+  description = "URL for the /hello endpoint"
+  value       = "${aws_apigatewayv2_stage.lambda_stage.invoke_url}/hello"
+}
