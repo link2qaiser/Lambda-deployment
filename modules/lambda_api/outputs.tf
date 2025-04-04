@@ -24,3 +24,8 @@ output "lambda_role_name" {
   description = "Name of the IAM role used by Lambda"
   value       = aws_iam_role.lambda_role.name
 }
+
+output "cloudwatch_log_group" {
+  description = "Name of the CloudWatch log group for Lambda"
+  value       = aws_cloudwatch_log_group.hello_world_logs.name
+}
