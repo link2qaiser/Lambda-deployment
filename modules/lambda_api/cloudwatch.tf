@@ -1,20 +1,5 @@
 # CloudWatch logging setup for Lambda and API Gateway
 
-# CloudWatch Log Group for Lambda
-resource "aws_cloudwatch_log_group" "hello_world_logs" {
-  name              = "/aws/lambda/${aws_lambda_function.hello_world.function_name}"
-  retention_in_days = var.log_retention_days
-
-  tags = merge(
-    {
-      Environment = var.environment,
-      Service     = "hello-world-api",
-      ManagedBy   = "terraform"
-    },
-    var.tags
-  )
-}
-
 # CloudWatch Log Group for API Gateway
 resource "aws_cloudwatch_log_group" "api_gateway_logs" {
   name              = "/aws/apigateway/${var.environment}-hello-world-api"
@@ -44,7 +29,7 @@ resource "aws_cloudwatch_metric_alarm" "lambda_error_alarm" {
   alarm_actions       = var.alarm_actions
   ok_actions          = var.ok_actions
   treat_missing_data  = "notBreaching"
-  
+
   dimensions = {
     FunctionName = aws_lambda_function.hello_world.function_name
   }
@@ -73,7 +58,7 @@ resource "aws_cloudwatch_metric_alarm" "api_4xx_error_alarm" {
   alarm_actions       = var.alarm_actions
   ok_actions          = var.ok_actions
   treat_missing_data  = "notBreaching"
-  
+
   dimensions = {
     ApiId = aws_apigatewayv2_api.lambda_api.id
   }
@@ -91,7 +76,7 @@ resource "aws_cloudwatch_metric_alarm" "api_4xx_error_alarm" {
 # CloudWatch Dashboard for Hello World API
 resource "aws_cloudwatch_dashboard" "hello_world_dashboard" {
   dashboard_name = "${var.environment}-hello-world-api-dashboard"
-  
+
   dashboard_body = jsonencode({
     widgets = [
       {
@@ -137,10 +122,10 @@ resource "aws_cloudwatch_dashboard" "hello_world_dashboard" {
         width  = 12
         height = 6
         properties = {
-          query   = "SOURCE '${aws_cloudwatch_log_group.hello_world_logs.name}' | fields @timestamp, @message\n| sort @timestamp desc\n| limit 20"
-          region  = var.aws_region
-          title   = "Latest Lambda Logs"
-          view    = "table"
+          query  = "SOURCE '${aws_cloudwatch_log_group.hello_world_logs.name}' | fields @timestamp, @message\n| sort @timestamp desc\n| limit 20"
+          region = var.aws_region
+          title  = "Latest Lambda Logs"
+          view   = "table"
         }
       },
       {
@@ -150,10 +135,10 @@ resource "aws_cloudwatch_dashboard" "hello_world_dashboard" {
         width  = 12
         height = 6
         properties = {
-          query   = "SOURCE '${aws_cloudwatch_log_group.api_gateway_logs.name}' | fields @timestamp, @message\n| sort @timestamp desc\n| limit 20"
-          region  = var.aws_region
-          title   = "Latest API Gateway Logs"
-          view    = "table"
+          query  = "SOURCE '${aws_cloudwatch_log_group.api_gateway_logs.name}' | fields @timestamp, @message\n| sort @timestamp desc\n| limit 20"
+          region = var.aws_region
+          title  = "Latest API Gateway Logs"
+          view   = "table"
         }
       }
     ]

@@ -1,0 +1,17 @@
+{
+  "name": "hello-world-api",
+  "version": "1.0.0",
+  "description": "Hello World API with FastAPI on AWS Lambda",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "pytest app/tests/",
+    "deploy:dev": "sls deploy --stage dev",
+    "deploy:stage": "sls deploy --stage stage",
+    "deploy:prod": "sls deploy --stage prod"
+  },
+  "devDependencies": {
+    "serverless": "^3.30.1",
+    "serverless-python-requirements": "^6.0.0"
+  }
+}

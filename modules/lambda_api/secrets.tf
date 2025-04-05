@@ -1,10 +1,15 @@
 # AWS Secrets Manager configuration
 
+# Add a random suffix to secret name to avoid conflicts with deleted secrets
+resource "random_id" "secret_suffix" {
+  byte_length = 8
+}
+
 # Secret for API configuration
 resource "aws_secretsmanager_secret" "api_config" {
-  name        = "${var.environment}-hello-world-api-config"
+  name        = "${var.environment}-hello-world-api-config-${random_id.secret_suffix.hex}"
   description = "Configuration for Hello World API"
-  
+
   tags = merge(
     {
       Environment = var.environment,
@@ -17,7 +22,7 @@ resource "aws_secretsmanager_secret" "api_config" {
 
 # Initial secret version with example values
 resource "aws_secretsmanager_secret_version" "api_config_initial" {
-  secret_id     = aws_secretsmanager_secret.api_config.id
+  secret_id = aws_secretsmanager_secret.api_config.id
   secret_string = jsonencode({
     API_KEY     = "example-api-key-${var.environment}"
     API_VERSION = "0.1.0"
@@ -29,7 +34,7 @@ resource "aws_secretsmanager_secret_version" "api_config_initial" {
 resource "aws_iam_policy" "secrets_access" {
   name        = "${var.environment}-hello-world-secrets-policy"
   description = "Policy to allow Lambda to access Secrets Manager"
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
