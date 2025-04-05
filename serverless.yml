@@ -1,33 +1,29 @@
 service: hello-world-api
 
-frameworkVersion: '3'
+frameworkVersion: "3"
 
 provider:
   name: aws
   runtime: python3.9
   region: us-east-2
   stage: ${opt:stage, 'dev'}
-  
+
   iam:
     role: ${env:LAMBDA_ROLE_ARN, 'arn:aws:iam::${aws:accountId}:role/${self:provider.stage}-hello-world-role'}
-  
+
   environment:
     ENVIRONMENT: ${self:provider.stage}
-    LOG_LEVEL: 
-      Fn::If:
-        - IsProd
-        - "INFO"
-        - "DEBUG"
+    LOG_LEVEL: ${self:custom.logLevels.${self:provider.stage}, 'DEBUG'}
 
 functions:
   api:
     handler: main.handler
     name: ${self:provider.stage}-hello-world
     description: Hello World API with FastAPI
-    
+
     deploymentSettings:
       preferLambdaVersion: true
-    
+
     events:
       - httpApi:
           path: /
@@ -39,16 +35,16 @@ functions:
 package:
   individually: true
   patterns:
-    - '!node_modules/**'
-    - '!venv/**'
-    - '!.env'
-    - '!.env.example'
-    - '!.git/**'
-    - '!.github/**'
-    - '!.terraform/**'
-    - '!environments/**'
-    - '!modules/**'
-    - '!tests/**'
+    - "!node_modules/**"
+    - "!venv/**"
+    - "!.env"
+    - "!.env.example"
+    - "!.git/**"
+    - "!.github/**"
+    - "!.terraform/**"
+    - "!environments/**"
+    - "!modules/**"
+    - "!tests/**"
 
 plugins:
   - serverless-python-requirements
@@ -58,17 +54,6 @@ custom:
     prod: INFO
     dev: DEBUG
     stage: DEBUG
-
-  # Define the condition for the environment variable
-  isProd: ${self:provider.stage} == 'prod'
-
-conditions:
-  IsProd: ${self:custom.isProd}
-
-resources:
-  Conditions:
-    IsProd: !Equals [${self:provider.stage}, 'prod']
-
   pythonRequirements:
     dockerizePip: false
     layer: true
