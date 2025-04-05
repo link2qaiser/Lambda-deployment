@@ -1,0 +1,201 @@
+name: Deploy Lambda Code
+
+on:
+  push:
+    branches:
+      - dev
+      - stage
+      - main
+    paths:
+      - "app/**"
+      - "serverless.yml"
+      - ".github/workflows/deploy-code.yml"
+  pull_request:
+    branches:
+      - dev
+      - stage
+      - main
+    paths:
+      - "app/**"
+      - "serverless.yml"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy to"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - stage
+          - prod
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r app/requirements.txt
+          pip install pytest pytest-cov flake8
+
+      - name: Run linting
+        run: |
+          flake8 app --count --select=E9,F63,F7,F82 --show-source --statistics
+
+      - name: Run unit tests
+        run: |
+          cd app
+          python -m pytest -v tests/ --cov=.
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Determine environment
+        id: set-env
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "environment=prod" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" == "refs/heads/stage" ]; then
+            echo "environment=stage" >> $GITHUB_OUTPUT
+          else
+            echo "environment=dev" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+
+      - name: Install Serverless Framework
+        run: npm install -g serverless
+
+      - name: Install project dependencies
+        run: npm install
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: Get IAM Role ARN from Terraform
+        id: get-role-arn
+        run: |
+          ENV=${{ steps.set-env.outputs.environment }}
+          # Note: You would need to have this role ARN stored somewhere or fetched from AWS
+          # For this example, we'll assume you store it in AWS SSM Parameter Store
+          ROLE_ARN=$(aws ssm get-parameter --name "/lambda-hello-world/$ENV/role-arn" --query "Parameter.Value" --output text || echo "")
+
+          if [ -z "$ROLE_ARN" ]; then
+            # Fallback to a standard pattern if parameter doesn't exist
+            ROLE_ARN="arn:aws:iam::$(aws sts get-caller-identity --query 'Account' --output text):role/$ENV-hello-world-role"
+          fi
+
+          echo "LAMBDA_ROLE_ARN=$ROLE_ARN" >> $GITHUB_ENV
+          echo "role_arn=$ROLE_ARN" >> $GITHUB_OUTPUT
+
+      - name: Deploy with Serverless
+        run: |
+          ENV=${{ steps.set-env.outputs.environment }}
+          serverless deploy --stage $ENV --verbose
+
+      - name: Fetch API endpoint
+        id: get-endpoint
+        run: |
+          ENV=${{ steps.set-env.outputs.environment }}
+          # Get API ID from AWS
+          API_NAME="${ENV}-hello-world-api"
+          API_ID=$(aws apigatewayv2 get-apis --query "Items[?Name=='$API_NAME'].ApiId" --output text)
+
+          if [ -n "$API_ID" ]; then
+            API_URL=$(aws apigatewayv2 get-api --api-id $API_ID --query 'ApiEndpoint' --output text)
+            echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+          else
+            echo "api_url=API not found" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Output summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "Environment: ${{ steps.set-env.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "Lambda Function: ${{ steps.set-env.outputs.environment }}-hello-world" >> $GITHUB_STEP_SUMMARY
+          echo "API URL: ${{ steps.get-endpoint.outputs.api_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "IAM Role: ${{ steps.get-role-arn.outputs.role_arn }}" >> $GITHUB_STEP_SUMMARY
+
+  regression_test:
+    needs: [deploy]
+    if: github.ref == 'refs/heads/stage' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Install test dependencies
+        run: |
+          pip install -r app/requirements.txt
+          pip install pytest pytest-html requests
+
+      - name: Determine environment
+        id: set-env
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "environment=prod" >> $GITHUB_OUTPUT
+          else
+            echo "environment=stage" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+
+      - name: Fetch API endpoint
+        id: get-endpoint
+        run: |
+          ENV=${{ steps.set-env.outputs.environment }}
+          # Get API ID from AWS
+          API_NAME="${ENV}-hello-world-api"
+          API_ID=$(aws apigatewayv2 get-apis --query "Items[?Name=='$API_NAME'].ApiId" --output text)
+
+          if [ -n "$API_ID" ]; then
+            API_URL=$(aws apigatewayv2 get-api --api-id $API_ID --query 'ApiEndpoint' --output text)
+            echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+          else
+            echo "api_url=API not found" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run regression tests
+        run: |
+          cd app
+          API_URL=${{ steps.get-endpoint.outputs.api_url }} python -m pytest -v tests/regression/ --html=regression-report.html
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: regression-test-report
+          path: app/regression-report.html

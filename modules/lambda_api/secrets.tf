@@ -1,8 +1,13 @@
 # AWS Secrets Manager configuration
 
+# Add a random suffix to secret name to avoid conflicts with deleted secrets
+resource "random_id" "secret_suffix" {
+  byte_length = 8
+}
+
 # Secret for API configuration
 resource "aws_secretsmanager_secret" "api_config" {
-  name        = "${var.environment}-hello-world-api-config"
+  name        = "${var.environment}-hello-world-api-config-${random_id.secret_suffix.hex}"
   description = "Configuration for Hello World API"
 
   tags = merge(
