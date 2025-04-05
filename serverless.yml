@@ -8,32 +8,13 @@ provider:
   region: us-east-2
   stage: ${opt:stage, 'dev'}
 
-  iam:
-    role: ${env:LAMBDA_ROLE_ARN, 'arn:aws:iam::${aws:accountId}:role/${self:provider.stage}-hello-world-role'}
-
-  environment:
-    ENVIRONMENT: ${self:provider.stage}
-    LOG_LEVEL: ${self:custom.logLevels.${self:provider.stage}, 'DEBUG'}
-
 functions:
   api:
     handler: main.handler
     name: ${self:provider.stage}-hello-world
     description: Hello World API with FastAPI
 
-    deploymentSettings:
-      preferLambdaVersion: true
-
-    events:
-      - httpApi:
-          path: /
-          method: get
-      - httpApi:
-          path: /hello
-          method: get
-
 package:
-  individually: true
   patterns:
     - "!node_modules/**"
     - "!venv/**"
@@ -44,16 +25,3 @@ package:
     - "!.terraform/**"
     - "!environments/**"
     - "!modules/**"
-    - "!tests/**"
-
-plugins:
-  - serverless-python-requirements
-
-custom:
-  logLevels:
-    prod: INFO
-    dev: DEBUG
-    stage: DEBUG
-  pythonRequirements:
-    dockerizePip: false
-    layer: true
