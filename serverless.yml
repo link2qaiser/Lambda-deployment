@@ -16,6 +16,7 @@ functions:
 
 package:
   patterns:
+    - "**/*"
     - "!node_modules/**"
     - "!venv/**"
     - "!.env"
@@ -25,3 +26,24 @@ package:
     - "!.terraform/**"
     - "!environments/**"
     - "!modules/**"
+
+# This tells Serverless not to attempt to create/update these resources
+resources:
+  Resources:
+    # Tell Serverless to skip creating the CloudWatch log group
+    ApiLogGroup:
+      Type: "AWS::Logs::LogGroup"
+      Properties:
+        LogGroupName: "/aws/lambda/${self:provider.stage}-hello-world"
+      DeletionPolicy: Retain
+      # This is the key part - it tells Serverless this resource already exists
+      DependsOn: "ServerlessSkipResourceCreationMarker"
+
+    # This is a dummy resource that doesn't create anything
+    ServerlessSkipResourceCreationMarker:
+      Type: "Custom::SkipCreation"
+
+  # Explicitly tell Serverless not to remove resources on updates/removal
+  Outputs:
+    ServerlessSkipResourceRemovalOutput:
+      Value: "This helps Serverless skip resource removal"
