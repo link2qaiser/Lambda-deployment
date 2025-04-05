@@ -14,7 +14,7 @@ provider:
   
   environment:
     ENVIRONMENT: ${self:provider.stage}
-    LOG_LEVEL: ${self:provider.stage, 'dev'} == 'prod' ? 'INFO' : 'DEBUG'
+    LOG_LEVEL: ${self:provider.stage == 'prod' ? 'INFO' : 'DEBUG'}
 
 functions:
   api:
