@@ -8,7 +8,6 @@ provider:
   region: us-east-2
   stage: ${opt:stage, 'dev'}
   
-  # Use existing IAM role created by Terraform
   iam:
     role: ${env:LAMBDA_ROLE_ARN, 'arn:aws:iam::${aws:accountId}:role/${self:provider.stage}-hello-world-role'}
   
@@ -22,7 +21,6 @@ functions:
     name: ${self:provider.stage}-hello-world
     description: Hello World API with FastAPI
     
-    # Deploy to an existing function created by Terraform
     deploymentSettings:
       preferLambdaVersion: true
     
