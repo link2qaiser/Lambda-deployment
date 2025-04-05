@@ -1,18 +1,36 @@
-# environments/dev/main.tf
+# Dev environment configuration - main.tf
+
+provider "aws" {
+  region = var.aws_region
+}
+
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
+  }
+
+  # Uncomment this block to use S3 as backend
+  # backend "s3" {
+  #   bucket = "your-terraform-state-bucket"
+  #   key    = "dev/terraform.tfstate"
+  #   region = "us-east-2"
+  # }
+}
+
 module "lambda_api" {
   source = "../../modules/lambda_api"
 
-  environment               = "dev"
-  aws_region                = "us-east-1"
-  log_retention_days        = 7
-  lambda_timeout            = 30
-  lambda_memory_size        = 256
-  enable_detailed_monitoring = true
-  api_error_threshold       = 5
-  alarm_actions             = []
-  ok_actions                = []
-  tags = {
-    Environment = "dev"
-    Project     = "MyProject"
-  }
+  environment                = var.environment
+  aws_region                 = var.aws_region
+  log_retention_days         = var.log_retention_days
+  lambda_timeout             = var.lambda_timeout
+  lambda_memory_size         = var.lambda_memory_size
+  enable_detailed_monitoring = var.enable_detailed_monitoring
+  api_error_threshold        = var.api_error_threshold
+  tags                       = var.tags
+  alarm_actions              = var.alarm_actions
+  ok_actions                 = var.ok_actions
 }

@@ -1,18 +1,20 @@
-# modules/lambda_api/variables.tf
+# Lambda API Module - variables.tf
+
 variable "environment" {
-  description = "Deployment environment (dev/staging/prod)"
+  description = "Deployment environment (dev, stage, prod)"
   type        = string
 }
 
 variable "aws_region" {
-  description = "AWS Region"
+  description = "AWS region for all resources"
   type        = string
+  default     = "us-east-2"
 }
 
 variable "log_retention_days" {
   description = "Number of days to retain CloudWatch logs"
   type        = number
-  default     = 7
+  default     = 14
 }
 
 variable "lambda_timeout" {
@@ -22,37 +24,38 @@ variable "lambda_timeout" {
 }
 
 variable "lambda_memory_size" {
-  description = "Amount of memory available to the Lambda function"
+  description = "Lambda function memory size in MB"
   type        = number
   default     = 256
 }
 
-variable "enable_detailed_monitoring" {
-  description = "Enable detailed CloudWatch monitoring"
-  type        = bool
-  default     = true
+variable "tags" {
+  description = "Additional tags to apply to resources"
+  type        = map(string)
+  default     = {}
 }
 
-variable "api_error_threshold" {
-  description = "Threshold for API error alarms"
-  type        = number
-  default     = 5
-}
-
+# CloudWatch alarm variables
 variable "alarm_actions" {
-  description = "List of alarm action ARNs"
+  description = "List of ARNs to be used as actions for the CloudWatch alarms"
   type        = list(string)
   default     = []
 }
 
 variable "ok_actions" {
-  description = "List of OK action ARNs"
+  description = "List of ARNs to be used as OK actions for the CloudWatch alarms"
   type        = list(string)
   default     = []
 }
 
-variable "tags" {
-  description = "A map of tags to add to all resources"
-  type        = map(string)
-  default     = {}
+variable "api_error_threshold" {
+  description = "Threshold for API Gateway 4XX error alarm"
+  type        = number
+  default     = 5
+}
+
+variable "enable_detailed_monitoring" {
+  description = "Whether to enable detailed CloudWatch monitoring"
+  type        = bool
+  default     = false
 }
