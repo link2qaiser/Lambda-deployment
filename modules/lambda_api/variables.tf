@@ -1,20 +1,18 @@
-# Lambda API Module - variables.tf
-
+# modules/lambda_api/variables.tf
 variable "environment" {
-  description = "Deployment environment (dev, stage, prod)"
+  description = "Deployment environment (dev/staging/prod)"
   type        = string
 }
 
 variable "aws_region" {
-  description = "AWS region for all resources"
+  description = "AWS Region"
   type        = string
-  default     = "us-east-1"
 }
 
 variable "log_retention_days" {
   description = "Number of days to retain CloudWatch logs"
   type        = number
-  default     = 14
+  default     = 7
 }
 
 variable "lambda_timeout" {
@@ -24,38 +22,37 @@ variable "lambda_timeout" {
 }
 
 variable "lambda_memory_size" {
-  description = "Lambda function memory size in MB"
+  description = "Amount of memory available to the Lambda function"
   type        = number
   default     = 256
 }
 
-variable "tags" {
-  description = "Additional tags to apply to resources"
-  type        = map(string)
-  default     = {}
+variable "enable_detailed_monitoring" {
+  description = "Enable detailed CloudWatch monitoring"
+  type        = bool
+  default     = true
 }
 
-# CloudWatch alarm variables
+variable "api_error_threshold" {
+  description = "Threshold for API error alarms"
+  type        = number
+  default     = 5
+}
+
 variable "alarm_actions" {
-  description = "List of ARNs to be used as actions for the CloudWatch alarms"
+  description = "List of alarm action ARNs"
   type        = list(string)
   default     = []
 }
 
 variable "ok_actions" {
-  description = "List of ARNs to be used as OK actions for the CloudWatch alarms"
+  description = "List of OK action ARNs"
   type        = list(string)
   default     = []
 }
 
-variable "api_error_threshold" {
-  description = "Threshold for API Gateway 4XX error alarm"
-  type        = number
-  default     = 5
-}
-
-variable "enable_detailed_monitoring" {
-  description = "Whether to enable detailed CloudWatch monitoring"
-  type        = bool
-  default     = false
+variable "tags" {
+  description = "A map of tags to add to all resources"
+  type        = map(string)
+  default     = {}
 }

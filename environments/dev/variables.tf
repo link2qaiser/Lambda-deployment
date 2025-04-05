@@ -1,27 +1,56 @@
-# Development environment variables
+# Dev environment configuration - variables.tf
 
-environment             = "dev"
-aws_region              = "us-east-1"
-log_retention_days      = 7
+variable "environment" {
+  description = "Deployment environment"
+  type        = string
+  default     = "dev"
+}
 
-# Lambda configuration
-lambda_timeout          = 30
-lambda_memory_size      = 256
+variable "aws_region" {
+  description = "AWS region for all resources"
+  type        = string
+}
 
-# CloudWatch configuration
-enable_detailed_monitoring = true
-api_error_threshold     = 5
+variable "log_retention_days" {
+  description = "Number of days to retain CloudWatch logs"
+  type        = number
+}
 
-# CloudWatch alarm actions
-# Example: How to add SNS topic ARN for alerting
-# alarm_actions         = ["arn:aws:sns:us-east-1:123456789012:dev-alerts"]
-# ok_actions            = ["arn:aws:sns:us-east-1:123456789012:dev-alerts"]
-alarm_actions           = []
-ok_actions              = []
+variable "lambda_timeout" {
+  description = "Lambda function timeout in seconds"
+  type        = number
+}
 
-# Additional tags
-tags = {
-  Owner       = "DevTeam"
-  Project     = "HelloWorldAPI"
-  CostCenter  = "Development"
+variable "lambda_memory_size" {
+  description = "Lambda function memory size in MB"
+  type        = number
+}
+
+variable "enable_detailed_monitoring" {
+  description = "Whether to enable detailed CloudWatch monitoring"
+  type        = bool
+  default     = true
+}
+
+variable "api_error_threshold" {
+  description = "Threshold for API Gateway 4XX error alarm"
+  type        = number
+}
+
+variable "tags" {
+  description = "Additional tags to apply to resources"
+  type        = map(string)
+  default     = {}
+}
+
+variable "alarm_actions" {
+  description = "List of ARNs to be used as actions for the CloudWatch alarms"
+  type        = list(string)
+  default     = []
+}
+
+variable "ok_actions" {
+  description = "List of ARNs to be used as OK actions for the CloudWatch alarms"
+  type        = list(string)
+  default     = []
 }

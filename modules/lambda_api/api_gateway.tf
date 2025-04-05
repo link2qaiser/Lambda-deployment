@@ -82,8 +82,7 @@ resource "aws_apigatewayv2_integration" "lambda_integration" {
   payload_format_version = "2.0"
   integration_method     = "POST"
   
-  # Enable logging to see request/response in CloudWatch
-  integration_method     = "POST"
+  # Remove the duplicate integration_method line
   timeout_milliseconds   = 30000  # 30 seconds
 }
 
