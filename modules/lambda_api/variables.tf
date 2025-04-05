@@ -34,3 +34,28 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+# CloudWatch alarm variables
+variable "alarm_actions" {
+  description = "List of ARNs to be used as actions for the CloudWatch alarms"
+  type        = list(string)
+  default     = []
+}
+
+variable "ok_actions" {
+  description = "List of ARNs to be used as OK actions for the CloudWatch alarms"
+  type        = list(string)
+  default     = []
+}
+
+variable "api_error_threshold" {
+  description = "Threshold for API Gateway 4XX error alarm"
+  type        = number
+  default     = 5
+}
+
+variable "enable_detailed_monitoring" {
+  description = "Whether to enable detailed CloudWatch monitoring"
+  type        = bool
+  default     = false
+}
