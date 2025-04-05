@@ -1,4 +1,4 @@
-# Lambda API Module - main.tf updates for CloudWatch integration
+# Lambda API Module - main.tf
 
 # Create zip file for Lambda function from the app directory
 data "archive_file" "lambda_zip" {
@@ -133,4 +133,19 @@ resource "aws_iam_role_policy_attachment" "lambda_xray" {
 resource "aws_iam_role_policy_attachment" "lambda_basic" {
   role       = aws_iam_role.lambda_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+# CloudWatch Log Group for Lambda
+resource "aws_cloudwatch_log_group" "hello_world_logs" {
+  name              = "/aws/lambda/${var.environment}-hello-world"
+  retention_in_days = var.log_retention_days
+
+  tags = merge(
+    {
+      Environment = var.environment,
+      Service     = "hello-world-api",
+      ManagedBy   = "terraform"
+    },
+    var.tags
+  )
 }
