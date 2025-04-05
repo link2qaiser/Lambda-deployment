@@ -1,4 +1,4 @@
-# Lambda API Module - main.tf
+# Lambda API Module - main.tf updates for CloudWatch integration
 
 # Create zip file for Lambda function from the app directory
 data "archive_file" "lambda_zip" {
@@ -20,29 +20,30 @@ resource "aws_lambda_function" "hello_world" {
   environment {
     variables = {
       ENVIRONMENT = var.environment
+      LOG_LEVEL   = var.environment == "prod" ? "INFO" : "DEBUG"
     }
   }
 
   timeout     = var.lambda_timeout
   memory_size = var.lambda_memory_size
+  publish     = true  # Create versioned deployment
 
-  tags = {
-    Environment = var.environment
-    Service     = "hello-world-api"
-    ManagedBy   = "terraform"
+  # Enable active tracing with X-Ray
+  tracing_config {
+    mode = "Active"
   }
-}
 
-# CloudWatch Log Group for Lambda
-resource "aws_cloudwatch_log_group" "hello_world_logs" {
-  name              = "/aws/lambda/${aws_lambda_function.hello_world.function_name}"
-  retention_in_days = var.log_retention_days
+  tags = merge(
+    {
+      Environment = var.environment,
+      Service     = "hello-world-api",
+      ManagedBy   = "terraform"
+    },
+    var.tags
+  )
 
-  tags = {
-    Environment = var.environment
-    Service     = "hello-world-api"
-    ManagedBy   = "terraform"
-  }
+  # Ensure CloudWatch log group exists before the Lambda function
+  depends_on = [aws_cloudwatch_log_group.hello_world_logs]
 }
 
 # IAM role for Lambda function
@@ -62,10 +63,13 @@ resource "aws_iam_role" "lambda_role" {
     ]
   })
 
-  tags = {
-    Environment = var.environment
-    ManagedBy   = "terraform"
-  }
+  tags = merge(
+    {
+      Environment = var.environment,
+      ManagedBy   = "terraform"
+    },
+    var.tags
+  )
 }
 
 # CloudWatch logging permissions
@@ -80,10 +84,34 @@ resource "aws_iam_policy" "lambda_logging" {
         Action = [
           "logs:CreateLogGroup",
           "logs:CreateLogStream",
-          "logs:PutLogEvents"
+          "logs:PutLogEvents",
+          "logs:DescribeLogStreams"
         ]
         Effect   = "Allow"
         Resource = "arn:aws:logs:*:*:*"
+      }
+    ]
+  })
+}
+
+# X-Ray tracing permissions
+resource "aws_iam_policy" "lambda_xray" {
+  name        = "${var.environment}-hello-world-xray-policy"
+  description = "IAM policy for Lambda X-Ray tracing"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "xray:PutTraceSegments",
+          "xray:PutTelemetryRecords",
+          "xray:GetSamplingRules",
+          "xray:GetSamplingTargets",
+          "xray:GetSamplingStatisticSummaries"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
       }
     ]
   })
@@ -93,6 +121,12 @@ resource "aws_iam_policy" "lambda_logging" {
 resource "aws_iam_role_policy_attachment" "lambda_logs" {
   role       = aws_iam_role.lambda_role.name
   policy_arn = aws_iam_policy.lambda_logging.arn
+}
+
+# Attach the X-Ray policy to the Lambda role
+resource "aws_iam_role_policy_attachment" "lambda_xray" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.lambda_xray.arn
 }
 
 # Lambda basic execution role policy attachment
