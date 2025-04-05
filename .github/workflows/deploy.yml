@@ -18,8 +18,8 @@ on:
         type: choice
         options:
           - dev
-          - stage
-          - prod
+        #   - stage
+        #   - prod
 
 jobs:
   determine_environment:

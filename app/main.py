@@ -5,11 +5,47 @@ from dotenv import load_dotenv
 import logging
 import time
 import json
+import boto3
+from botocore.exceptions import ClientError
 
 # Load environment variables from .env file if it exists
 # This will be used for local development
 if os.path.exists(".env"):
     load_dotenv()
+
+
+# Load configuration from AWS Secrets Manager in Lambda environment
+def get_secret():
+    # Only try to access Secrets Manager if not in local development
+    if os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+        secret_name = f"{os.environ.get('ENVIRONMENT')}-hello-world-api-config"
+        region_name = os.environ.get("AWS_REGION", "us-east-2")
+
+        try:
+            session = boto3.session.Session()
+            client = session.client(
+                service_name="secretsmanager", region_name=region_name
+            )
+
+            response = client.get_secret_value(SecretId=secret_name)
+            if "SecretString" in response:
+                secret = json.loads(response["SecretString"])
+                # Update environment with secrets
+                for key, value in secret.items():
+                    os.environ[key] = value
+                return True
+        except ClientError as e:
+            logging.error(f"Error accessing Secret Manager: {str(e)}")
+            return False
+    return False
+
+
+# Try to load secrets, but continue even if it fails
+# This makes the app work in both local dev and AWS environments
+try:
+    get_secret()
+except Exception as e:
+    logging.warning(f"Could not load secrets: {str(e)}")
 
 # Configure logging
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
