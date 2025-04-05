@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - dev
-    #   - stage
-    #   - main
+      - stage
+      - main
   pull_request:
     branches:
       - main
@@ -18,8 +18,6 @@ on:
         type: choice
         options:
           - dev
-        #   - stage
-        #   - prod
 
 jobs:
   determine_environment:
@@ -32,10 +30,6 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
-          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            echo "environment=prod" >> $GITHUB_OUTPUT
-          elif [ "${{ github.ref }}" == "refs/heads/stage" ]; then
-            echo "environment=stage" >> $GITHUB_OUTPUT
           else
             echo "environment=dev" >> $GITHUB_OUTPUT
           fi
@@ -83,18 +77,6 @@ jobs:
       - name: Validate Dev Configuration
         run: |
           cd environments/dev
-          terraform init -backend=false
-          terraform validate
-
-      - name: Validate Stage Configuration
-        run: |
-          cd environments/stage
-          terraform init -backend=false
-          terraform validate
-
-      - name: Validate Prod Configuration
-        run: |
-          cd environments/prod
           terraform init -backend=false
           terraform validate
 
