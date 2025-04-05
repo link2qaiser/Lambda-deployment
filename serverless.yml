@@ -4,46 +4,44 @@ frameworkVersion: "3"
 
 provider:
   name: aws
-  runtime: python3.9
+  runtime: python3.10
   region: us-east-2
   stage: ${opt:stage, 'dev'}
+  memorySize: 512
+  timeout: 30
+
+  environment:
+    ENVIRONMENT: ${opt:stage, 'dev'} # ✅ used in SecretsManager and app config
+    LOG_LEVEL: INFO # Optional: override per stage
 
 functions:
-  api:
-    handler: main.handler
-    name: ${self:provider.stage}-hello-world
-    description: Hello World API with FastAPI
+  app:
+    handler: app.main.handler
+    events:
+      - http:
+          path: /
+          method: any
+      - http:
+          path: /{proxy+}
+          method: any
 
 package:
-  patterns:
-    - "**/*"
-    - "!node_modules/**"
-    - "!venv/**"
-    - "!.env"
-    - "!.env.example"
-    - "!.git/**"
-    - "!.github/**"
-    - "!.terraform/**"
-    - "!environments/**"
-    - "!modules/**"
+  exclude:
+    - node_modules/**
+    - .venv/**
+    - .pytest_cache/**
+    - __pycache__/**
+    - .serverless/**
+    - tests/**
 
-# This tells Serverless not to attempt to create/update these resources
-resources:
-  Resources:
-    # Tell Serverless to skip creating the CloudWatch log group
-    ApiLogGroup:
-      Type: "AWS::Logs::LogGroup"
-      Properties:
-        LogGroupName: "/aws/lambda/${self:provider.stage}-hello-world"
-      DeletionPolicy: Retain
-      # This is the key part - it tells Serverless this resource already exists
-      DependsOn: "ServerlessSkipResourceCreationMarker"
+plugins:
+  - serverless-python-requirements
 
-    # This is a dummy resource that doesn't create anything
-    ServerlessSkipResourceCreationMarker:
-      Type: "Custom::SkipCreation"
+custom:
+  pythonRequirements:
+    dockerizePip: true
+    zip: true
+    slim: true
+    layer: true
 
-  # Explicitly tell Serverless not to remove resources on updates/removal
-  Outputs:
-    ServerlessSkipResourceRemovalOutput:
-      Value: "This helps Serverless skip resource removal"
+  # Optional: custom domains, logging, etc.
