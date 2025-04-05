@@ -50,3 +50,14 @@ output "api_hello_endpoint" {
   description = "URL for the /hello endpoint"
   value       = "${aws_apigatewayv2_stage.lambda_stage.invoke_url}/hello"
 }
+
+# Secrets Manager outputs
+output "secrets_manager_arn" {
+  description = "ARN of the Secrets Manager secret"
+  value       = aws_secretsmanager_secret.api_config.arn
+}
+
+output "secrets_manager_name" {
+  description = "Name of the Secrets Manager secret"
+  value       = aws_secretsmanager_secret.api_config.name
+}

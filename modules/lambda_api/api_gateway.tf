@@ -33,31 +33,31 @@ resource "aws_apigatewayv2_stage" "lambda_stage" {
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.api_gateway_logs.arn
     format = jsonencode({
-      requestId                = "$context.requestId"
-      extendedRequestId        = "$context.extendedRequestId"
-      ip                       = "$context.identity.sourceIp"
-      caller                   = "$context.identity.caller"
-      user                     = "$context.identity.user"
-      requestTime              = "$context.requestTime"
-      httpMethod               = "$context.httpMethod"
-      resourcePath             = "$context.resourcePath"
-      status                   = "$context.status"
-      protocol                 = "$context.protocol"
-      responseLength           = "$context.responseLength"
-      integrationErrorMessage  = "$context.integrationErrorMessage"
-      integrationLatency       = "$context.integration.latency"
-      integrationStatus        = "$context.integration.status"
-      latency                  = "$context.latency"
-      path                     = "$context.path"
-      routeKey                 = "$context.routeKey"
-      stage                    = "$context.stage"
+      requestId               = "$context.requestId"
+      extendedRequestId       = "$context.extendedRequestId"
+      ip                      = "$context.identity.sourceIp"
+      caller                  = "$context.identity.caller"
+      user                    = "$context.identity.user"
+      requestTime             = "$context.requestTime"
+      httpMethod              = "$context.httpMethod"
+      resourcePath            = "$context.resourcePath"
+      status                  = "$context.status"
+      protocol                = "$context.protocol"
+      responseLength          = "$context.responseLength"
+      integrationErrorMessage = "$context.integrationErrorMessage"
+      integrationLatency      = "$context.integration.latency"
+      integrationStatus       = "$context.integration.status"
+      latency                 = "$context.latency"
+      path                    = "$context.path"
+      routeKey                = "$context.routeKey"
+      stage                   = "$context.stage"
     })
   }
 
   # Set up detailed metrics if enabled
   default_route_settings {
-    throttling_burst_limit = 100
-    throttling_rate_limit  = 50
+    throttling_burst_limit   = 100
+    throttling_rate_limit    = 50
     detailed_metrics_enabled = var.enable_detailed_monitoring
   }
 
@@ -81,10 +81,9 @@ resource "aws_apigatewayv2_integration" "lambda_integration" {
   integration_uri        = aws_lambda_function.hello_world.invoke_arn
   payload_format_version = "2.0"
   integration_method     = "POST"
-  
+
   # Enable logging to see request/response in CloudWatch
-  integration_method     = "POST"
-  timeout_milliseconds   = 30000  # 30 seconds
+  timeout_milliseconds = 30000 # 30 seconds
 }
 
 # Route for the root path
