@@ -1,6 +1,35 @@
 # Lambda API Module - main.tf
 
-# Create zip file for Lambda function from the app directory
+# Create layer zip for dependencies
+resource "null_resource" "layer_dependencies" {
+  triggers = {
+    dependencies_versions = filemd5("${path.root}/../../app/requirements.txt")
+  }
+
+  provisioner "local-exec" {
+    command = <<EOT
+      mkdir -p ${path.module}/layer/python
+      pip install -r ${path.root}/../../app/requirements.txt -t ${path.module}/layer/python
+    EOT
+  }
+}
+
+data "archive_file" "layer_zip" {
+  depends_on  = [null_resource.layer_dependencies]
+  type        = "zip"
+  source_dir  = "${path.module}/layer"
+  output_path = "${path.module}/lambda_layer.zip"
+}
+
+resource "aws_lambda_layer_version" "dependencies" {
+  filename   = data.archive_file.layer_zip.output_path
+  layer_name = "${var.environment}-hello-world-dependencies"
+
+  compatible_runtimes = ["python3.9"]
+  source_code_hash    = data.archive_file.layer_zip.output_base64sha256
+}
+
+# Create zip file for Lambda function code (without dependencies)
 data "archive_file" "lambda_zip" {
   type        = "zip"
   source_dir  = "${path.root}/../../app"
@@ -14,9 +43,12 @@ resource "aws_lambda_function" "hello_world" {
   handler       = "main.handler"
   runtime       = "python3.9"
   role          = aws_iam_role.lambda_role.arn
-  
+
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
-  
+
+  # Add the layer with dependencies
+  layers = [aws_lambda_layer_version.dependencies.arn]
+
   environment {
     variables = {
       ENVIRONMENT = var.environment
@@ -26,7 +58,7 @@ resource "aws_lambda_function" "hello_world" {
 
   timeout     = var.lambda_timeout
   memory_size = var.lambda_memory_size
-  publish     = true  # Create versioned deployment
+  publish     = true # Create versioned deployment
 
   # Enable active tracing with X-Ray
   tracing_config {

@@ -29,3 +29,8 @@ output "dashboard_url" {
   description = "URL to the CloudWatch dashboard"
   value       = "https://${var.aws_region}.console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#dashboards:name=${var.environment}-hello-world-api-dashboard"
 }
+
+output "secrets_manager_name" {
+  description = "Name of the Secrets Manager secret"
+  value       = module.lambda_api.secrets_manager_name
+}
