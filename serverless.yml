@@ -1,0 +1,47 @@
+service: hello-world-api
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: python3.10
+  region: us-east-2
+  stage: ${opt:stage, 'dev'}
+  memorySize: 512
+  timeout: 30
+
+  environment:
+    ENVIRONMENT: ${opt:stage, 'dev'} # ✅ used in SecretsManager and app config
+    LOG_LEVEL: INFO # Optional: override per stage
+
+functions:
+  app:
+    handler: app.main.handler
+    events:
+      - http:
+          path: /
+          method: any
+      - http:
+          path: /{proxy+}
+          method: any
+
+package:
+  exclude:
+    - node_modules/**
+    - .venv/**
+    - .pytest_cache/**
+    - __pycache__/**
+    - .serverless/**
+    - tests/**
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: true
+    zip: true
+    slim: true
+    layer: true
+
+  # Optional: custom domains, logging, etc.

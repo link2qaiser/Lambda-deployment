@@ -29,28 +29,19 @@ resource "aws_apigatewayv2_stage" "lambda_stage" {
   name        = "$default"
   auto_deploy = true
 
-  # Access logging configuration
+  # Access logging configuration with only supported variables
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.api_gateway_logs.arn
     format = jsonencode({
-      requestId               = "$context.requestId"
-      extendedRequestId       = "$context.extendedRequestId"
-      ip                      = "$context.identity.sourceIp"
-      caller                  = "$context.identity.caller"
-      user                    = "$context.identity.user"
-      requestTime             = "$context.requestTime"
-      httpMethod              = "$context.httpMethod"
-      resourcePath            = "$context.resourcePath"
-      status                  = "$context.status"
-      protocol                = "$context.protocol"
-      responseLength          = "$context.responseLength"
-      integrationErrorMessage = "$context.integrationErrorMessage"
-      integrationLatency      = "$context.integration.latency"
-      integrationStatus       = "$context.integration.status"
-      latency                 = "$context.latency"
-      path                    = "$context.path"
-      routeKey                = "$context.routeKey"
-      stage                   = "$context.stage"
+      requestId      = "$context.requestId"
+      ip             = "$context.identity.sourceIp"
+      requestTime    = "$context.requestTime"
+      httpMethod     = "$context.httpMethod"
+      routeKey       = "$context.routeKey"
+      status         = "$context.status"
+      protocol       = "$context.protocol"
+      responseLength = "$context.responseLength"
+      path           = "$context.path"
     })
   }
 
